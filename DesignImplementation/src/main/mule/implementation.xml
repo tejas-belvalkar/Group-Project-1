@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="b81a4b12-099e-4f03-87c3-c94a4c795139" >
+		<db:my-sql-connection host="mudb.learn.mulesoft.com" port="3306" user="mule" password="mule" database="training" />
+	</db:config>
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="66fd621b-cb6d-4126-819a-c4108ec20ccc" >
+		<http:listener-connection host="0.0.0.0" port="8082" />
+	</http:listener-config>
+	<flow name="getAccounts" doc:id="f5782c03-aee6-4973-951b-6dada027e9ff" >
+		<db:select doc:name="Select" doc:id="4f265482-f906-484b-81fb-a6ee88f6e72a" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT * FROM flights_customers WHERE accountid = :id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{'id':attributes.Headers.user_id}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="2c5db186-e60e-4d82-88e9-ce1cdd5741be" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	address: ((((payload01.street default "") ++ 
+	" "++ (payload01.city default "")) ++
+	" "++ (payload01.state default "")) ++
+	" "++ (payload01.postal default "")) ++
+	" "++ (payload01.country default ""),
+	air_miles: payload01.miles default 0,
+	name: payload01.name default "",
+	created_at: payload01.creationDate as String,
+	id: payload01.accountID as Number,
+	"type": payload01.accountType default ""
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="createAccount" doc:id="b7882185-5603-4736-b45b-0f0dae172f18" >
+		<set-payload value="Data added but not really!" doc:name="Set Payload" doc:id="c6ef5354-26d8-43c3-b288-d7e3ca6057b5" />
+	</flow>
+</mule>
